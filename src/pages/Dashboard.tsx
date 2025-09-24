@@ -40,10 +40,9 @@ const Dashboard: React.FC = () => {
   };
 
   const handleAnnouncementAdded = useCallback(() => {
-    // Refresh announcements after adding a new one
+    alert("Add Announcement");
     fetchAnnouncements();
   }, []);
-
 
   const fetchAnnouncements = async () => {
     try {
@@ -97,6 +96,7 @@ const Dashboard: React.FC = () => {
         <ModalAddAnnouncement
           onClose={handleCloseModal}
           onAnnouncementAdded={handleAnnouncementAdded}
+          announcementFromParent={undefined}
         />
       )}
     </div>

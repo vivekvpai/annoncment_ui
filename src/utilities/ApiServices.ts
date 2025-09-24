@@ -47,4 +47,12 @@ export const ApiServices = {
     });
     return response.data;
   },
+
+  updateAnnouncement: async (announcement_id: any, announcement: any) => {
+    const response = await api.put(
+      "/announcement/update_announcement.php",
+      {announcement_id: announcement_id, ...announcement}
+    );
+    return response.data;
+  },
 };

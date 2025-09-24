@@ -11,14 +11,16 @@ interface AnnouncementFormData {
 }
 
 interface ModalAddAnnouncementProps {
+  announcementFromParent: any;
   onClose: () => void;
   onAnnouncementAdded?: () => void;
 }
 
-const ModalAddAnnouncement: React.FC<ModalAddAnnouncementProps> = ({
+const ModalAddAnnouncement = ({
+  announcementFromParent,
   onClose,
   onAnnouncementAdded,
-}) => {
+}: ModalAddAnnouncementProps) => {
   const { userId } = useAuth();
   const [formData, setFormData] = useState<AnnouncementFormData>({
     announcement_title: "",
@@ -26,7 +28,8 @@ const ModalAddAnnouncement: React.FC<ModalAddAnnouncementProps> = ({
     category_id: "",
     user_id: userId,
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [announcementId, setAnnouncementId] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [categories, setCategories] = useState([]);
 
@@ -52,7 +55,7 @@ const ModalAddAnnouncement: React.FC<ModalAddAnnouncementProps> = ({
     }
 
     try {
-      setIsSubmitting(true);
+      setLoading(true);
       setError("");
 
       console.log("Announcement data:", formData);
@@ -67,27 +70,64 @@ const ModalAddAnnouncement: React.FC<ModalAddAnnouncementProps> = ({
       console.error("Error adding announcement:", err);
       setError("Failed to add announcement. Please try again.");
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const categories = await ApiServices.getAnnaoncmentCategory();
+      setCategories(categories.data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
+
+  const handleEdit = async () => {
+    try {
+      await ApiServices.updateAnnouncement(announcementId, formData);
+      
+      if (onAnnouncementAdded) {
+        onAnnouncementAdded();
+      }
+      onClose();
+    } catch (error) {
+      console.error("Error deleting announcement:", error);
     }
   };
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const categories = await ApiServices.getAnnaoncmentCategory();
-        setCategories(categories.data);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-      }
-    };
+    if (announcementFromParent) {
+      console.log("Announcement data:", announcementFromParent);
+      setFormData({
+        announcement_title: announcementFromParent.announcement_title,
+        announcement_content: announcementFromParent.announcement_content,
+        category_id: announcementFromParent.category_id,
+        user_id: announcementFromParent.user_id,
+      });
+      setAnnouncementId(announcementFromParent.announcement_id);
+    } else {
+      setFormData({
+        announcement_title: "",
+        announcement_content: "",
+        category_id: "",
+        user_id: userId,
+      });
+      setAnnouncementId(null);
+    }
+
     fetchCategories();
-  }, []);
+  }, [announcementFromParent]);
 
   return (
     <div className="modal-overlay">
       <div className="modal">
         <div className="modal-header">
-          <h2>Add New Announcement</h2>
+          {announcementId ? (
+            <h2>Edit Announcement</h2>
+          ) : (
+            <h2>Add New Announcement</h2>
+          )}
           <button
             type="button"
             onClick={onClose}
@@ -100,7 +140,7 @@ const ModalAddAnnouncement: React.FC<ModalAddAnnouncementProps> = ({
 
         {error && <div className="alert alert-error">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="announcement-form">
+        <form className="announcement-form">
           <div className="form-group">
             <label htmlFor="announcement_title">Title</label>
             <input
@@ -111,7 +151,7 @@ const ModalAddAnnouncement: React.FC<ModalAddAnnouncementProps> = ({
               onChange={handleChange}
               className="form-control"
               placeholder="Enter announcement title"
-              disabled={isSubmitting}
+              disabled={loading}
             />
           </div>
 
@@ -125,7 +165,7 @@ const ModalAddAnnouncement: React.FC<ModalAddAnnouncementProps> = ({
               className="form-control"
               rows={5}
               placeholder="Enter announcement content"
-              disabled={isSubmitting}
+              disabled={loading}
             />
           </div>
 
@@ -137,7 +177,7 @@ const ModalAddAnnouncement: React.FC<ModalAddAnnouncementProps> = ({
               value={formData.category_id}
               onChange={handleChange}
               className="form-control"
-              disabled={isSubmitting}
+              disabled={loading}
             >
               <option value="">Select a category</option>
               {categories.map((category: any) => (
@@ -153,17 +193,29 @@ const ModalAddAnnouncement: React.FC<ModalAddAnnouncementProps> = ({
               type="button"
               onClick={onClose}
               className="btn btn-secondary"
-              disabled={isSubmitting}
+              disabled={loading}
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Adding..." : "Add Announcement"}
-            </button>
+            {announcementId ? (
+              <button
+                type="button"
+                onClick={handleEdit}
+                className="btn btn-primary"
+                disabled={loading}
+              >
+                Edit
+              </button>
+            ) : (
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={loading}
+                onClick={handleSubmit}
+              >
+                {loading ? "Adding..." : "Add Announcement"}
+              </button>
+            )}
           </div>
         </form>
       </div>
