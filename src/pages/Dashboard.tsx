@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { ApiServices } from "../utilities/ApiServices";
 import ModalAddAnnouncement from "../components/ModalAddAnnouncement";
+import AnnouncementCard from "../components/AnnouncementCard";
 
 const Dashboard: React.FC = () => {
   const { userId, logout } = useAuth();
@@ -43,23 +44,13 @@ const Dashboard: React.FC = () => {
     fetchAnnouncements();
   }, []);
 
+
   const fetchAnnouncements = async () => {
     try {
       const announcements = await ApiServices.getAllAnnouncements();
       setAnnouncements(announcements.data);
     } catch (error) {
       console.error("Error fetching announcements:", error);
-    }
-  };
-
-  const handleDeleteAnnouncement = async (announcement_id: any) => {
-    console.log(announcement_id);
-    try {
-      await ApiServices.deleteAnnouncement(announcement_id);
-
-      fetchAnnouncements();
-    } catch (error) {
-      console.error("Error deleting announcement:", error);
     }
   };
 
@@ -86,36 +77,13 @@ const Dashboard: React.FC = () => {
 
           {announcements.length > 0 ? (
             announcements.map((announcement: any) => (
-              <div className="announcement-list" key={announcement.id}>
-                <div className="announcement-card">
-                  <div className="announcement-header">
-                    <h3>{announcement.announcement_title}</h3>
-                    <span className="category">
-                      {announcement.category_name}
-                    </span>
-                  </div>
-
-                  <p>{announcement.announcement_content}</p>
-                  <div className="announcement-meta">
-                    <span>Posted by: {announcement.user_name}</span>
-                    <span>
-                      Posted on:{" "}
-                      {new Date(announcement.timestamp).toLocaleDateString()}
-                    </span>
-                    {userId === announcement.user_id.toString() && (
-                      <button
-                        className=" btn-delete"
-                        onClick={() =>
-                          handleDeleteAnnouncement(announcement.announcement_id)
-                        }
-                      >
-                        Delete
-                      </button>
-                    )}
-                    {/* <span>View {announcement.view_count}</span> */}
-                  </div>
-                </div>
-              </div>
+              <AnnouncementCard
+                announcement={announcement}
+                refresh={() => {
+                  fetchAnnouncements();
+                  console.log("Announcement deleted");
+                }}
+              />
             ))
           ) : (
             <div className="announcement-list">
